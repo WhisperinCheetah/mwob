@@ -22,7 +22,7 @@ func master(conn *comms.Connection) {
 	for {
 		current, _, changed := m.Poll()
 
-		if changed {
+		if changed || !changed {
 			buf.Reset()
 			err := gob.NewEncoder(&buf).Encode(current)
 
