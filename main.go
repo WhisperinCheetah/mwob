@@ -49,7 +49,6 @@ func master(conn *comms.Connection) {
 
 func slave(conn *comms.Connection) {
 	// Poll for incoming messages.
-	var s mouse.State
 	for {
 		select {
 		case <-conn.Closed():
@@ -59,6 +58,7 @@ func slave(conn *comms.Connection) {
 		}
 
 		if data, ok := conn.Poll(); ok {
+			var s mouse.State
 			err := gob.NewDecoder(bytes.NewReader(data)).Decode(&s)
 
 			if err != nil {
