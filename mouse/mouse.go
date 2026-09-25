@@ -66,7 +66,7 @@ func (m *Mouse) Poll() (current State, last State, changed bool) {
 }
 
 func (m *Mouse) Move(x, y int) {
-	robotgo.MoveSmooth(x, y)
+	robotgo.Move(x, y)
 }
 
 func (m *Mouse) handleEvent(ev hook.Event) {
