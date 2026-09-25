@@ -1,45 +1,5 @@
 package main
 
-import "fmt"
-import "net"
-// import "mwob/mouse"
-
-func writeMessage(w io.Writer, data []byte) error {
-	length := uint32(len(data))
-	if err := binary.Write(w, binary.BigEndian, length); err != nil {
-		return err
-	}
-	_, err := w.Write(data)
-	return err
-}
-
-func readMessage(r io.Reader) ([]byte, error) {
-	var length uint32
-	if err := binary.Read(r, binary.BigEndian, &length); err != nil {
-		return nil, err
-	}
-	buf := make([]byte, length)
-	_, err := io.ReadFull(r, buf)
-	return buf, err
-}
-
-func connectWithRetry(addr string) net.Conn {
-	backoff := time.Second
-	for {
-		conn, err := net.DialTimeout("tcp", addr, 5*time.Second)
-		if err == nil {
-			return conn
-		}
-		fmt.Println("connect failed, retrying:", err)
-		time.Sleep(backoff)
-		if backoff < 30*time.Second {
-			backoff *= 2
-		}
-	}
-}
-
-package main
-
 import (
 	"flag"
 	"fmt"
