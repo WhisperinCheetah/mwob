@@ -98,7 +98,12 @@ func main() {
 	fmt.Println("connected")
 	defer conn.Close()
 
-	master(conn)
+	switch *mode {
+	case "server":
+		master(conn)
+	case "client":
+		slave(conn)
+	}
 
 	// Send a message every 2 seconds.
 	go func() {
