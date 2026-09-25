@@ -59,16 +59,27 @@ func slave(conn *comms.Connection) {
 		default:
 		}
 
-		if data, ok := conn.Poll(); ok {
-			err := gob.NewDecoder(bytes.NewReader(data)).Decode(&s)
-
-			if err != nil {
+		if data, ok := latest(conn); ok {
+			if err := gob.NewDecoder(bytes.NewReader(data)).Decode(&s); err != nil {
 				log.Fatal(err)
 			}
-
 			fmt.Println(s)
 		}
 		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+func latest(conn *comms.Connection) ([]byte, bool) {
+	data, ok := conn.Poll()
+	if !ok {
+		return nil, false
+	}
+	for {
+		next, ok := conn.Poll()
+		if !ok {
+			return data, true
+		}
+		data = next
 	}
 }
 
