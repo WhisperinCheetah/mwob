@@ -51,6 +51,7 @@ func master(conn *comms.Connection) {
 func slave(conn *comms.Connection) {
 	// Poll for incoming messages.
 	var s mouse.State
+	mouse := mouse.New()
 	for {
 		select {
 		case <-conn.Closed():
@@ -64,6 +65,8 @@ func slave(conn *comms.Connection) {
 				log.Fatal(err)
 			}
 			fmt.Println(s)
+
+			mouse.Move(s.X/2, s.Y/2)
 		}
 		time.Sleep(100 * time.Millisecond)
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/go-vgo/robotgo"
 	hook "github.com/robotn/gohook"
 )
 
@@ -62,6 +63,10 @@ func (m *Mouse) Poll() (current State, last State, changed bool) {
 		last = m.current
 	}
 	return current, last, changed
+}
+
+func (m *Mouse) Move(x, y int) {
+	robotgo.MoveSmooth(x, y)
 }
 
 func (m *Mouse) handleEvent(ev hook.Event) {
