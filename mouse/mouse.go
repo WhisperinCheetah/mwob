@@ -2,19 +2,30 @@ package mouse
 
 import (
 	"fmt"
+	"sync"
 
 	hook "github.com/robotn/gohook"
 )
 
-type Mouse struct {
+// State is a snapshot of the mouse's position and button state at a point
+// in time.
+type State struct {
 	X, Y      int
 	LeftDown  bool
 	RightDown bool
-	events    chan hook.Event
+}
+
+type Mouse struct {
+	mu      sync.Mutex
+	current State
+	last    State // state as of the most recent Poll call
+	changed bool  // whether current has diverged from last since that call
+	events  chan hook.Event
 }
 
 func New() *Mouse {
-	return &Mouse{X: -1, Y: -1}
+	initial := State{X: -1, Y: -1}
+	return &Mouse{current: initial, last: initial}
 }
 
 // Start begins listening for global mouse events.
@@ -34,14 +45,35 @@ func (m *Mouse) Run() {
 	}
 }
 
+// Poll returns the mouse's current state, whether it has changed since the
+// last call to Poll, and (when changed) the state as of that last call.
+// When changed is false, last equals current.
+func (m *Mouse) Poll() (current State, last State, changed bool) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	current = m.current
+	changed = m.changed
+	if changed {
+		last = m.last
+		m.last = m.current
+		m.changed = false
+	} else {
+		last = m.current
+	}
+	return current, last, changed
+}
+
 func (m *Mouse) handleEvent(ev hook.Event) {
 	switch ev.Kind {
 	case hook.MouseMove, hook.MouseDrag:
 		x, y := int(ev.X), int(ev.Y)
-		if x != m.X || y != m.Y {
-			m.X, m.Y = x, y
-			fmt.Printf("Mouse position: %d, %d\n", m.X, m.Y)
+		m.mu.Lock()
+		if x != m.current.X || y != m.current.Y {
+			m.current.X, m.current.Y = x, y
+			m.changed = true
 		}
+		m.mu.Unlock()
 	case hook.MouseDown:
 		m.setButton(ev.Button, true)
 	case hook.MouseUp:
@@ -50,17 +82,36 @@ func (m *Mouse) handleEvent(ev hook.Event) {
 }
 
 func (m *Mouse) setButton(button uint16, down bool) {
-	state := "UP"
-	if down {
-		state = "DOWN"
-	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	switch button {
 	case hook.MouseMap["left"]:
-		m.LeftDown = down
-		fmt.Printf("Left button %s\n", state)
+		if m.current.LeftDown != down {
+			m.current.LeftDown = down
+			m.changed = true
+		}
 	case hook.MouseMap["right"]:
-		m.RightDown = down
-		fmt.Printf("Right button %s\n", state)
+		if m.current.RightDown != down {
+			m.current.RightDown = down
+			m.changed = true
+		}
+	}
+}
+
+func Probe() {
+	fmt.Println("Starting ...")
+
+	mouse := New()
+	mouse.Start()
+	defer mouse.End()
+	go mouse.Run()
+
+	for {
+		current, _, changed := mouse.Poll()
+
+		if changed {
+			fmt.Println(current)
+		}
 	}
 }
