@@ -68,7 +68,7 @@ func slave(conn *comms.Connection) {
 
 			mouse.Move(s.X/2, s.Y/2)
 		}
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(20 * time.Millisecond)
 	}
 }
 
